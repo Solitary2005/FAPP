@@ -31,3 +31,11 @@ add_executable (random_forest src/random_forest_sensing.cpp )
 target_link_libraries(random_forest
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES})
+add_executable (ablation_map src/ablation_map.cpp)
+target_link_libraries(ablation_map
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES})
+add_executable (planning_map src/planning_map.cpp)
+target_link_libraries(planning_map
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES})

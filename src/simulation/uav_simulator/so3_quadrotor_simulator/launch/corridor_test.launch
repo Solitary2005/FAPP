@@ -1,0 +1,85 @@
+<launch>
+  <arg name="init_x" default="0"/>
+  <arg name="init_y" default="0"/>
+  <arg name="init_z" default="1"/>
+  <arg name="moving_obs_num" default="10"/>
+  <arg name="moving_obs_mode" default="0"/>
+
+  <!-- 狭窄走廊地图 -->
+  <node pkg="map_generator" name="planning_map" type="planning_map" output="screen">
+    <param name="corridor/length" value="40"/>
+    <param name="corridor/width" value="3"/>
+    <param name="map/z_size" value="3"/>
+    <param name="map/resolution" value="0.2"/>
+    <param name="scenario/convoy" value="true"/>
+    <param name="convoy/num" value="5"/>
+    <param name="convoy/speed_x" value="0.6"/>
+    <param name="convoy/radius" value="0.5"/>
+    <param name="convoy/spacing" value="4.0"/>
+    <param name="rate_hz" value="50.0"/>
+
+    <!-- 动态障碍参数：数量与模式可切换；半径0.2~0.5；x轴最大速度5m/s，y轴速度为0（生成器保证） -->
+    <param name="moving_obs_num" value="$(arg moving_obs_num)"/>
+    <param name="moving_obs/mode" value="$(arg moving_obs_mode)"/>
+    <param name="moving_obs/radius_min" value="0.2"/>
+    <param name="moving_obs/radius_max" value="0.5"/>
+    <param name="moving_obs/max_speed_x" value="5.0"/>
+    <param name="rate_hz" value="50.0"/>
+    <!-- 车队阻塞场景：五个同向、0.6m/s、半径0.5m，按50Hz发布 -->
+    <param name="scenario/convoy" value="true"/>
+    <param name="convoy/num" value="5"/>
+    <param name="convoy/speed_x" value="0.6"/>
+    <param name="convoy/radius" value="0.5"/>
+    <param name="convoy/spacing" value="4.0"/>
+  </node>
+
+  <!-- 本地感知渲染节点 -->
+  <node pkg="local_sensing_node" type="pcl_render_node" name="pcl_render_node" output="screen">
+    <rosparam command="load" file="$(find local_sensing_node)/params/camera.yaml"/>
+    <param name="sensing_horizon" value="8.0"/>
+    <param name="sensing_rate" value="30.0"/>
+    <param name="estimation_rate" value="30.0"/>
+    <param name="map/x_size" value="50"/>
+    <param name="map/y_size" value="50"/>
+    <param name="map/z_size" value="3"/>
+    <remap from="~global_map" to="/map_generator/global_cloud"/>
+    <remap from="~odometry" to="/sim/odom"/>
+    <remap from="~pcl_render_node/cloud" to="/pcl_render_node/cloud"/>
+  </node>
+
+  <!-- 模拟器 -->
+  <node pkg="so3_quadrotor_simulator" type="quadrotor_simulator_so3" name="quadrotor_simulator_so3" output="screen">
+    <param name="rate/odom" value="100.0"/>
+    <param name="simulator/init_state_x" value="$(arg init_x)"/>
+    <param name="simulator/init_state_y" value="$(arg init_y)"/>
+    <param name="simulator/init_state_z" value="$(arg init_z)"/>
+    <remap from="~odom" to="/sim/odom"/>
+    <remap from="~cmd" to="/so3_cmd"/>
+    <remap from="~imu" to="/sim/imu"/>
+  </node>
+
+  <!-- 控制器 -->
+  <node pkg="nodelet" type="nodelet"
+        args="standalone so3_control/SO3ControlNodelet"
+        name="so3_control" required="true" output="screen">
+    <param name="so3_control/init_state_x" value="$(arg init_x)"/>
+    <param name="so3_control/init_state_y" value="$(arg init_y)"/>
+    <param name="so3_control/init_state_z" value="$(arg init_z)"/>
+    <remap from="~odom" to="/sim/odom"/>
+    <remap from="~position_cmd" to="/position_cmd"/>
+    <remap from="~motors" to="motors"/>
+    <remap from="~corrections" to="corrections"/>
+    <remap from="~so3_cmd" to="/so3_cmd"/>
+    <remap from="~imu" to="/sim/imu"/>
+    <rosparam file="$(find so3_control)/config/gains_hummingbird.yaml"/>
+    <rosparam file="$(find so3_control)/config/corrections_hummingbird.yaml"/>
+    <param name="mass" value="0.98"/>
+    <param name="use_angle_corrections " value="false"/>
+    <param name="use_external_yaw " value="false"/>
+    <param name="gains/rot/z" value="1"/>
+    <param name="gains/ang/z" value="0.3"/>
+  </node>
+
+  <!-- RViz -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find so3_quadrotor_simulator)/config/rviz.rviz"/>
+</launch>

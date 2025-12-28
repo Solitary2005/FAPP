@@ -75,10 +75,10 @@ namespace fapp_planner
       double total_time_ms = (t2 - t0).toSec() * 1000;
 
       /* ---------- get result and check collision ---------- */
-      if (result == lbfgs::LBFGS_CONVERGENCE ||
-          result == lbfgs::LBFGSERR_MAXIMUMITERATION ||
-          result == lbfgs::LBFGS_ALREADY_MINIMIZED ||
-          result == lbfgs::LBFGS_STOP)
+      if (result == lbfgs::LBFGS_CONVERGENCE ||  // L-BFGS reaches convergence
+          result == lbfgs::LBFGSERR_MAXIMUMITERATION ||  // reach max iter
+          result == lbfgs::LBFGS_ALREADY_MINIMIZED ||  // already minimized
+          result == lbfgs::LBFGS_STOP) 
       {
         flag_force_return = false;
 
@@ -1145,7 +1145,7 @@ namespace fapp_planner
     PolyTrajOptimizer *opt = reinterpret_cast<PolyTrajOptimizer *>(func_data);
 
     fill(opt->min_ellip_dist2_.begin(), opt->min_ellip_dist2_.end(), std::numeric_limits<double>::max());
-
+    // x的前3*(piece_num_-1)个是控制顶点，后piece_num_个是虚拟时间
     Eigen::Map<const Eigen::MatrixXd> P(x, 3, opt->piece_num_ - 1);
     // Eigen::VectorXd T(Eigen::VectorXd::Constant(piece_nums, opt->t2T(x[n - 1]))); // same t
     Eigen::Map<const Eigen::VectorXd> t(x + (3 * (opt->piece_num_ - 1)), opt->piece_num_);
@@ -1156,7 +1156,7 @@ namespace fapp_planner
     Eigen::VectorXd gradT(opt->piece_num_);
     double smoo_cost = 0, time_cost = 0;
     Eigen::VectorXd obs_swarm_feas_qvar_costs(4);
-
+    // 为什么要做一个虚拟时间到真实时间的映射呢？
     opt->VirtualT2RealT(t, T); // Unbounded virtual time to real time
 
     opt->jerkOpt_.generate(P, T); // Generate trajectory from {P,T}

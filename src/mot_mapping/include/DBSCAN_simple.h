@@ -45,7 +45,7 @@ void extractNano(std::vector<pcl::PointIndices> &cluster_indices)
     {
         // std::vector<int> nn_indices;
         // std::vector<float> nn_distances;
-         std::vector<std::pair<long unsigned int, double>> ret_matches;
+        std::vector<std::pair<long unsigned int, double>> ret_matches;
 
         std::vector<bool> is_noise(input_cloud_->points.size(), false);
         std::vector<int> types(input_cloud_->points.size(), UN_PROCESSED);

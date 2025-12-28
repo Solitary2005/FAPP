@@ -60,6 +60,7 @@ double AStar::getDiagHeu(GridNodePtr node1, GridNodePtr node2)
     return h;
 }
 
+// 这个是基于曼哈顿距离的启发函数
 double AStar::getManhHeu(GridNodePtr node1, GridNodePtr node2)
 {
     double dx = abs(node1->index(0) - node2->index(0));
@@ -68,7 +69,7 @@ double AStar::getManhHeu(GridNodePtr node1, GridNodePtr node2)
 
     return dx + dy + dz;
 }
-
+// 这个是基于欧式距离的启发函数
 double AStar::getEuclHeu(GridNodePtr node1, GridNodePtr node2)
 {
     return (node2->index - node1->index).norm();
