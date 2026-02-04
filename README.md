@@ -1,108 +1,83 @@
-<!--
- Author Information
- * @Author: bowen-xu link.bowenxu@connect.hku.hk
- * @Date: 2025-06-25 20:09:36
- * @LastEditors: bowen-xu link.bowenxu@connect.hku.hk
- * @LastEditTime: 2025-09-06 19:15:56
- * @Description: 
- * 
- * Copyright (c) 2025 by bowen-xu link.bowenxu@connect.hku.hk, All Rights Reserved. 
--->
-<div align = "center">
-  <h1>
-    FAPP 
-  </h1>
-</div>
-<div align = "center">
-  <h2>
-    Fast and Adaptive Perception and Planning for UAVs in Dynamic Cluttered Environments
-  </h2>
-</div>
-<div align="center">
-  <strong>
-        Minghao Lu,
-        Xiyu Fan,
-        Han Chen, and
-        Peng Lu<sup>†</sup>
-  </strong>
-  <p>
-    <sup>†</sup>Corresponding Author
-  </p>
-  <a href="https://ieeexplore.ieee.org/document/10816005"><img src="https://img.shields.io/badge/Paper-IEEE%20TRO-004088"/></a>
-  <a href='https://arxiv.org/pdf/2312.08743.pdf'><img src='https://img.shields.io/badge/arXiv-2312.08743-24CC00' alt='arxiv'></a>
-  <a href='https://www.bilibili.com/video/BV1tpkMYEELF/?spm_id_from=333.1387.upload.video_card.click&vd_source=038c861e9419962098b9dc6162ccee43'><img alt="Video" src="https://img.shields.io/badge/BiliBili-Video-EAD1DC"/></a>
-  <a href='https://www.youtube.com/watch?v=-0l-_cR8NkQ'><img alt="Video" src="https://img.shields.io/badge/YouTube-Video-CC0000"/></a>
-  <a href="https://mp.weixin.qq.com/s/nrjIWLI3TfUIXH2wxCVqOw"><img src="https://img.shields.io/badge/%E4%B8%AD%E6%96%87%E8%A7%A3%E8%AF%BB-%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7-4A8D2D"/></a>
-</div>
+# FAPP Reproduction & Extensions
 
-## 💡 News 
-* **[2025.06.25]** The source code of **FAPP** is released !
-* **[2024.12.16]** **FAPP** is accepted by TRO 2024 🚀 !
+This repository contains a reproduction of the FAPP (Fast and Adaptive Perception and Planning) system from the paper published in T-RO 2024, along with several additions and fixes.
 
-## 📜 Introduction
+**Original Paper**: FAPP: Fast and Adaptive Perception and Planning for UAVs in Dynamic Cluttered Environments  
+**Original Code**: https://github.com/arclab-hku/FAPP/
 
-**FAPP** (**F**ast and **A**daptive **P**erception and **P**lanning) is one of the first few works that consider the obstacle avoidance of UAVs in highly cluttered and dynamic environments. The performance of FAPP is validated in various simulation and experimental tests. The whole perception and planning process can be completed within a few milliseconds, which is highly efficient. (Click the image to view the video)
+---
+## The structure of the origin code
+![alt text](image.png)
+## What This Repository Contains
 
-[![video](misc/overview.png)](https://www.bilibili.com/video/BV1tpkMYEELF/?spm_id_from=333.1387.upload.video_card.click&vd_source=038c861e9419962098b9dc6162ccee43)
+### 1. Bug Fix: Sparse Object Scene Handling
 
-Please cite our paper if you use this project in your research:
+**Problem**: The original open-source code crashes when the number of dynamic objects is small (e.g., 1-2 objects). This occurs when `cluster size = 1` but `ikd-tree size = 0`, causing an out-of-bounds access during nearest neighbor queries.
 
-```
-@ARTICLE{10816005,
-  author={Lu, Minghao and Fan, Xiyu and Chen, Han and Lu, Peng},
-  journal={IEEE Transactions on Robotics}, 
-  title={FAPP: Fast and Adaptive Perception and Planning for UAVs in Dynamic Cluttered Environments}, 
-  year={2025},
-  volume={41},
-  number={},
-  pages={871-886},
-  keywords={Dynamics;Vehicle dynamics;Collision avoidance;Heuristic algorithms;Planning;Autonomous aerial vehicles;Real-time systems;Navigation;Motion segmentation;Robot kinematics;Aerial systems;dynamic environment;motion planning;obstacle avoidance;point cloud},
-  doi={10.1109/TRO.2024.3522187}}
+**Fix**: Added null checks before accessing nearest neighbor results:
+- Skip discrimination when the ikd-tree is empty
+- Directly add points when nearest neighbor search returns empty results
 
-```
-Please kindly star ⭐️ this project if it helps you. We take great efforts to develop and maintain it 😁.
+See the fix in the point cloud management module.
 
-## 🛠️ Installation
+### 2. Implementation: Covariance-Adaptive Estimation
 
-### Test Environment
-* Ubuntu 20.04
-* ROS Noetic
+**Note**: The covariance-adaptive estimation described in the paper (Section III-B).
 
-### 🚀 Quick Start
+**Implementation**: Based on the paper's description, I implemented the process noise covariance (`Q`) update mechanism:
+- Maintains a sliding window of innovation covariance
+- Dynamically updates `Q` based on observation errors over time
+- Adjustable window size `W` (tested with W=1, 10, 100)
 
-#### Clone our repository and build
-```bash
-git clone https://github.com/arclab-hku/FAPP.git
-cd FAPP 
-catkin build
-```
-#### Configure tmux
-*This procedure is optional*: You can choose to launch all the ros nodes in `quick_start.yaml` one by one.
+**Key parameters used**:
+- Initial `Q` diagonal: 0.1 for position, 0.1 for velocity
+- Measurement noise `R` diagonal: 0.09 for position, 0.4 for velocity
+- Window size: configurable (default 100)
 
-```bash
-# install tmux
-sudo apt install tmux
-sudo apt install tmuxp
-# kill a session (for example)
-tmux kill-session -t fapp
-```
+### 3. Ablation Study Reproduction
 
-#### Launch the system
-```bash
-tmuxp load quick_start.yaml 
-```
+Reproduced the ablation experiments from the paper using three simulated environments:
 
-Trigger the quadrotor by the `3D Nav Goal` in Rviz.
+| Environment | Description |
+|-------------|-------------|
+| Env 1 | Constant velocity (5 m/s) along x-axis |
+| Env 2 | Rapid direction change: acc=3 m/s² (0-1.0s), acc=-30 m/s² (1.0-1.2s), acc=3 m/s² (1.2-2.0s) |
+| Env 3 | Sinusoidal velocity: period=1s, amplitude=6.28 m/s |
 
-https://github.com/user-attachments/assets/87fddb00-c4af-4772-a650-ba3cdaa09d5c
+**Results**: The adaptive covariance update generally improves estimation accuracy, especially for non-constant velocity motions. However, results are sensitive to initial parameter settings and relative positioning between UAV and objects.
 
-### 🛰️ Test in other available scenarios
-Stay tuned for the upcoming update.
+### 4. Planning Module Verification
+
+Created simulation environments to qualitatively verify the planning module:
+
+- **Environment 1**: 50m×50m field with 100 static boxes, 100 static cylinders, and 50/100/150 dynamic objects with mixed motion patterns
+- **Environment 2**: 40m×3m narrow corridor with 10/30/50 dynamic objects moving in opposite directions
+- **Environment 3**: Corridor blocked by 5 objects moving in convoy (0.6 m/s)
+
+### 5. Personal Extension: State-Space Process Noise Update
+![alt text](图片1.png)
+**Idea**: The paper updates process noise in the observation space. Since the observation matrix `C` is identity in the simulation (observation space = state space), I explored updating `Q` directly in the state space.
+
+**Difference**:
+- Paper (observation space): `Q_hat = C * gamma * C^T - A * P * A^T - R`
+- Extension (state space): `Q_hat = C * gamma * C^T - A * P * A^T` (removes R term)
+
+**Result**: In simulation (where observation and state spaces are equivalent), the state-space approach shows slightly better estimation accuracy. This highlights the sim-real gap: methods that work well in simulation may require careful parameter tuning for real-world deployment.
 
 
-## 🤓 Acknowledgments
+---
 
-We would like to express our gratitude to the following projects, which have provided significant support and inspiration for our work:
-- [GCOPTER](https://github.com/ZJU-FAST-Lab/GCOPTER): A general-purpose trajectory optimizer for multicopters.
-- [EGO-Planner](https://github.com/ZJU-FAST-Lab/EGO-Planner-v2): An efficient framework for gradient-based quadrotor local planning.
+## Limitations & Notes
 
+1. **Parameter Sensitivity**: The covariance-adaptive estimation is sensitive to initial `Q` and `R` values, as well as window size `W`. Different scenarios may require different parameter settings.
+
+2. **Sim-Real Gap**: The state-space extension performs better in simulation but may not generalize directly to real-world scenarios where observation and state spaces differ.
+
+
+
+
+---
+
+## Acknowledgments
+
+This reproduction was completed as a course project for "Intelligent Robots" at DUT. I would like to express my gratitude to the original authors for open-sourcing the code of FAPP.
