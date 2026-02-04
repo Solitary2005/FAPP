@@ -7,7 +7,7 @@ This repository contains a reproduction of the FAPP (Fast and Adaptive Perceptio
 
 ---
 ## The structure of the origin code
-![alt text](image.png)
+![alt text](https://github.com/Solitary2005/FAPP/blob/main/pics/pic1.png?raw=true)
 ## What This Repository Contains
 
 ### 1. Bug Fix: Sparse Object Scene Handling
@@ -55,7 +55,7 @@ Created simulation environments to qualitatively verify the planning module:
 - **Environment 3**: Corridor blocked by 5 objects moving in convoy (0.6 m/s)
 
 ### 5. Personal Extension: State-Space Process Noise Update
-![alt text](图片1.png)
+![alt text](https://github.com/Solitary2005/FAPP/blob/main/pics/pic2.png?raw=true)
 **Idea**: The paper updates process noise in the observation space. Since the observation matrix `C` is identity in the simulation (observation space = state space), I explored updating `Q` directly in the state space.
 
 **Difference**:
