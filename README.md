@@ -6,7 +6,7 @@ This repository contains a reproduction of the FAPP (Fast and Adaptive Perceptio
 **Original Code**: https://github.com/arclab-hku/FAPP/
 
 ---
-## The structure of the origin code
+## The structure of the original code
 ![alt text](https://github.com/Solitary2005/FAPP/blob/main/pics/pic1.png?raw=true)
 ## What This Repository Contains
 
@@ -59,8 +59,8 @@ Created simulation environments to qualitatively verify the planning module:
 **Idea**: The paper updates process noise in the observation space. Since the observation matrix `C` is identity in the simulation (observation space = state space), I explored updating `Q` directly in the state space.
 
 **Difference**:
-- Paper (observation space): `Q_hat = C * gamma * C^T - A * P * A^T - R`
-- Extension (state space): `Q_hat = C * gamma * C^T - A * P * A^T` (removes R term)
+- Paper (observation space): `Q_hat = C - A * Σ * A^T - R`
+- Extension (state space): `Q_hat = C  - A * Σ * A^T` (removes R term)
 
 **Result**: In simulation (where observation and state spaces are equivalent), the state-space approach shows slightly better estimation accuracy. This highlights the sim-real gap: methods that work well in simulation may require careful parameter tuning for real-world deployment.
 
@@ -80,4 +80,4 @@ Created simulation environments to qualitatively verify the planning module:
 
 ## Acknowledgments
 
-This reproduction was completed as a course project for "Intelligent Robots" at DUT. I would like to express my gratitude to the original authors for open-sourcing the code of FAPP.
+This reproduction was completed as a course project for "Intelligent Robots" at DUT. I would like to express my gratitude to the original authors for the work.
